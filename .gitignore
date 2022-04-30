@@ -1,0 +1,5 @@
+.idea/
+/in/*
+/out/*
+!/in/.gitignore
+!/out/.gitignore
