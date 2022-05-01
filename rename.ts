@@ -1,28 +1,57 @@
 import exifParser from 'https://cdn.skypack.dev/exif-parser@0.1.12'
-// import exifParser from "https://esm.sh/exif-parser@0.1.12"
+import {fromUnixTime, format} from 'https://cdn.skypack.dev/date-fns@2.28.0'
 
-import {fromUnixTime, format} from "https://esm.sh/date-fns@2.28.0"
+// --- CONFIG ---
+const INPUT_DIR = './in'
+const OUTPUT_DIR = './out'
 
+// --- Run the script ---
+main()
+
+// --- TYPINGS ---
 type ExifTags = {
     DateTimeOriginal?: number
     [tag:string]: number|string|undefined
 }
 
-const fileName = 'IMG_0155.JPG'
+type NameAndExifTags = {
+    name: string,
+    tags: ExifTags
+}
 
-//@TODO: loop on files in input directory
-//@TODO: filter out non-JPG files
+// --- FUNCTIONS ---
+function renamePicture(file:NameAndExifTags):void{
+    const newName = createNameFromExifTags(file.tags)
+    if(!newName){ return }
+    Deno.renameSync(`${INPUT_DIR}/${file.name}`, `${OUTPUT_DIR}/${newName}`)
+}
 
-const file = await Deno.readFile(`in/${fileName}`)
-
-const exif = exifParser.create(file.buffer).parse()
-console.log(exif)
-
-console.log(createNameFromExifTags(exif.tags))
+function getFileExifTags(fileEntry:Deno.DirEntry):null|ExifTags{
+    const file = Deno.readFileSync(`in/${fileEntry.name}`)
+    const exif = exifParser.create(file.buffer).parse()
+    return exif.tags ?? null
+}
 
 function createNameFromExifTags(tags:ExifTags):null|string {
     if(!tags.DateTimeOriginal){ return null }
 
     const date = fromUnixTime(tags.DateTimeOriginal)
-    return format(date, 'yyyy-MM-dd_HHmmss')
+    return `${format(date, 'yyyy-MM-dd_HHmmss')}.JPG`
+}
+
+function isJpegFile(file:Deno.DirEntry):boolean{
+    const jpgFileRegex = /^.+.(JPG|jpg)$/
+    return file.isFile && jpgFileRegex.test(file.name)
+}
+
+function main():void{
+    const jpegFiles = [...Deno.readDirSync(INPUT_DIR)].filter(isJpegFile)
+
+    jpegFiles
+        .map((f):NameAndExifTags|null => {
+            const tags = getFileExifTags(f)
+            return tags ? { name: f.name, tags: tags } : null
+        })
+
+        .forEach(file => file && renamePicture(file))
 }
