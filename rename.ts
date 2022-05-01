@@ -36,7 +36,7 @@ function createNameFromExifTags(tags:ExifTags):null|string {
     if(!tags.DateTimeOriginal){ return null }
 
     const date = fromUnixTime(tags.DateTimeOriginal)
-    return `${format(date, 'yyyy-MM-dd_HHmmss')}.JPG`
+    return `${format(date, 'yyyy_MM_dd_HHmmss')}.JPG`
 }
 
 function isJpegFile(file:Deno.DirEntry):boolean{
@@ -52,6 +52,5 @@ function main():void{
             const tags = getFileExifTags(f)
             return tags ? { name: f.name, tags: tags } : null
         })
-
         .forEach(file => file && renamePicture(file))
 }
