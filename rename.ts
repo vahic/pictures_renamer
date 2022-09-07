@@ -1,5 +1,7 @@
 import exifParser from 'https://cdn.skypack.dev/exif-parser@0.1.12'
-import {fromUnixTime, format} from 'https://cdn.skypack.dev/date-fns@2.28.0'
+import { fromUnixTime } from 'https://cdn.skypack.dev/date-fns@2.28.0?dts'
+import DateFnsTz from 'https://cdn.skypack.dev/date-fns-tz@1.3.7?dts'
+
 
 // --- CONFIG ---
 const INPUT_DIR = './in'
@@ -36,7 +38,7 @@ function createNameFromExifTags(tags:ExifTags):null|string {
     if(!tags.DateTimeOriginal){ return null }
 
     const date = fromUnixTime(tags.DateTimeOriginal)
-    return `${format(date, 'yyyy_MM_dd_HHmmss')}.JPG`
+    return `${DateFnsTz.formatInTimeZone(date, 'UTC', 'yyyy_MM_dd_HHmmss')}.JPG`
 }
 
 function isJpegFile(file:Deno.DirEntry):boolean{
